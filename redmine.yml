@@ -1,0 +1,6 @@
+---
+- hosts: redmine
+  become: yes
+  remote_user: "{{ user }}"
+  roles:
+    - redmine

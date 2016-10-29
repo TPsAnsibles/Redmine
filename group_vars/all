@@ -1,0 +1,4 @@
+user: "redmine"
+pass: "redmine"
+
+ruby_dest: /home/redmine/.rbenv

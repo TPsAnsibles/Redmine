@@ -1,0 +1,2 @@
+[redmine]
+192.168.56.133 ansible_ssh_user=redmine ansible_ssh_password=redmine

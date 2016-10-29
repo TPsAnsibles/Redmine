@@ -1,0 +1,51 @@
+- name: rubyビルド用ツールインストール
+  yum: name={{ item }} state=present
+  with_items:
+    - openssl-devel
+    - readline-devel
+    - zlib-devel
+    - curl-devel
+    - libyaml-devel
+    - libffi-devel
+
+- stat: path={{ ruby_dest }}
+  register: rbenv
+
+- name: rbenvインストール
+  become: false
+  git: repo=https://github.com/sstephenson/rbenv.git dest={{ ruby_dest }}
+  when: rbenv.stat.exists != true
+
+- stat: path={{ ruby_dest }}
+  register: rubybuild
+
+- name: ruby-buildインストール
+  become: false
+  git: repo=https://github.com/sstephenson/ruby-build.git dest={{ ruby_dest }}/plugins/ruby-build
+  when: rubybuild.stat.exists != true
+
+- name: rbenvを全ユーザーで使用するための設定を、/etc/profile.d/rbenv.shに記述
+  blockinfile:
+    dest: /etc/profile.d/rbenv.sh
+    state: present
+    mode: 0755
+    create: yes
+    block: |
+      export PATH={{ ruby_dest }}/bin:$PATH
+      export RBENV_ROOT={{ ruby_dest }}
+      eval "$(rbenv init -)"
+
+- name: ruby-build初期化
+  command: "{{ ruby_dest }}/plugins/ruby-build/install.sh"
+
+- stat: path={{ ruby_dest }}/versions/{{ ruby_version }}
+  register: rv
+
+- name: "未インストールの場合、ruby{{ ruby_version }}をインストール"
+  become: false
+  shell: /bin/bash -lc "rbenv install {{ ruby_version }} && rbenv rehash && rbenv global {{ ruby_version }}"
+  when: rv.stat.exists != true
+
+- name: bundlerインストール
+  become: false
+  command: /bin/bash -lc "gem install bundler"

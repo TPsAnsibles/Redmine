@@ -1,0 +1,6 @@
+---
+- hosts: redmine
+  become: true
+  become_user: root
+  roles:
+    - postgres

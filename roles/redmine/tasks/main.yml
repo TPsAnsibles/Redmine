@@ -1,0 +1,62 @@
+- name: ImageMagick + 日本語フォントインストール
+  yum: name={{ item }} state=present
+  with_items:
+    - ImageMagick
+    - ImageMagick-devel
+    - ipa-pgothic-fonts
+
+- name: Redmineダウンロード
+  subversion:
+    repo: "{{ redmine_url }}"
+    dest: "{{ redmine_dest }}"
+
+- name: redmine/config/database.yml作成
+  template: dest={{ redmine_dest }}/config/database.yml src="database.yml"
+
+- name: redmine/config/configuration.yml作成
+  template: dest={{ redmine_dest }}/config/configuration.yml src="configuration.yml"
+
+- name: Redmineの依存gemをbundle install
+  command: bash -lc "cd {{ redmine_dest }} && bundle install --without development test --path vendor/bundle"
+
+- name: セッション改ざん防止用秘密鍵生成
+  command: bash -lc "cd {{ redmine_dest }} && bundle exec rake generate_secret_token"
+
+- name: DBへmigrated
+  command: bash -lc "cd {{ redmine_dest }} && RAILS_ENV=production bundle exec rake db:migrate"
+
+- name: デフォルトデータの登録d
+  command: bash -lc "cd {{ redmine_dest }} && RAILS_ENV=production REDMINE_LANG=ja bundle exec rake redmine:load_default_data"
+
+- name: Passengerインストールd
+  command: bash -lc "gem install passenger --no-rdoc --no-ri"
+
+- name: PassengerのApacheモジュールインストール
+  command: bash -lc "passenger-install-apache2-module --auto"
+
+- name: PassengerのApache設定確認
+  command: bash -lc "passenger-install-apache2-module --snippet"
+  register:
+    passenger_snippet
+
+- name: redmine.conf作成
+  template: src=redmine.conf dest=/etc/httpd/conf.d/redmine.conf
+
+- name: Redmineへのシンボリックリンク作成
+  file:
+    state: link
+    src: "{{ redmine_dest }}/public"
+    path: /var/www/html/redmine
+    owner: apache
+    group: apache
+
+- name: RedmineにApacheからアクセス可能にする
+  file:
+    state: directory
+    path: "{{ redmine_dest }}"
+    owner: apache
+    group: apache
+    recurse: yes
+
+- name: Apache再起動
+  service: name=httpd state=restarted enabled=yes

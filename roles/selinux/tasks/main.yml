@@ -1,0 +1,5 @@
+- name: SELinuxモジュールインストール
+  yum: name=libselinux-python state=present
+
+- name: SELinux無効化
+  selinux: state=disabled

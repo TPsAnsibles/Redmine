@@ -1,0 +1,5 @@
+---
+- include: application.yml
+- include: database.yml
+- include: ruby.yml
+- include: redmine.yml

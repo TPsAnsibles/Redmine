@@ -1,0 +1,9 @@
+---
+- hosts: redmine
+  become: true
+  become_user: root
+  remote_user: "{{ user }}"
+  roles:
+    - foundation
+    - selinux
+    - apache
